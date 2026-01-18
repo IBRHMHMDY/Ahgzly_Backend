@@ -19,7 +19,8 @@ class AuthController extends Controller
             'password' => Hash::make($request->string('password')),
         ]);
 
-        // لاحقًا بعد Spatie: سنضع role=Customer هنا بشكل رسمي
+        $user->assignRole('Customer');
+
         $token = $user->createToken('customer-token')->plainTextToken;
 
         return response()->json([
