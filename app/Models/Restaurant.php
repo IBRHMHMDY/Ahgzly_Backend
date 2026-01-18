@@ -23,4 +23,14 @@ class Restaurant extends Model
             ->withPivot(['is_default', 'is_active'])
             ->withTimestamps();
     }
+
+    public function customers()
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
 }
