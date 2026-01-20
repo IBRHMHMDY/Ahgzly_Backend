@@ -2,37 +2,43 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\User;
+use App\Policies\Concerns\RestaurantScope;
 
 class CustomerPolicy
 {
+    use RestaurantScope;
+
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['Owner', 'Manager', 'Staff']);
+        return in_array($user->role, [
+            UserRole::OWNER->value,
+            UserRole::MANAGER->value,
+            UserRole::STAFF->value,
+        ]);
     }
 
     public function view(User $user, Customer $customer): bool
     {
-        return $user->hasAnyRole(['Owner', 'Manager', 'Staff'])
-            && $user->canAccessRestaurant($customer->restaurant_id);
+        return $this->viewAny($user) && $this->sameRestaurantId($user, $customer);
     }
 
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['Owner', 'Manager', 'Staff']);
+        return $this->viewAny($user) && $this->hasTenant($user);
     }
 
     public function update(User $user, Customer $customer): bool
     {
-        return $user->hasAnyRole(['Owner', 'Manager', 'Staff'])
-            && $user->canAccessRestaurant($customer->restaurant_id);
+        return $this->view($user, $customer);
     }
 
     public function delete(User $user, Customer $customer): bool
     {
-        // للـ MVP: نخلي الحذف Owner/Manager فقط
-        return $user->hasAnyRole(['Owner', 'Manager'])
-            && $user->canAccessRestaurant($customer->restaurant_id);
+        // اختياري: Owner/Manager فقط
+        return in_array($user->role, [UserRole::OWNER->value, UserRole::MANAGER->value])
+            && $this->sameRestaurantId($user, $customer);
     }
 }

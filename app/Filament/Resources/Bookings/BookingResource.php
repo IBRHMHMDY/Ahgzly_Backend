@@ -8,21 +8,22 @@ use App\Filament\Resources\Bookings\Pages\ListBookings;
 use App\Filament\Resources\Bookings\Schemas\BookingForm;
 use App\Filament\Resources\Bookings\Tables\BookingsTable;
 use App\Models\Booking;
-use BackedEnum;
-use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class BookingResource extends Resource
 {
     protected static ?string $model = Booking::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static ?string $recordTitleAttribute = 'Bookings';
+    protected static ?string $navigationLabel = 'الحجوزات';
+
+    protected static ?int $navigationSort = 1;
+
+    // ✅ اتركها true هنا لأن الجدول يحتوي على restaurant_id
+    protected static bool $isScopedToTenant = true;
 
     public static function form(Schema $schema): Schema
     {
@@ -48,18 +49,5 @@ class BookingResource extends Resource
             'create' => CreateBooking::route('/create'),
             'edit' => EditBooking::route('/{record}/edit'),
         ];
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        $tenant = Filament::getTenant();
-
-        return parent::getEloquentQuery()
-            ->when($tenant, fn (Builder $q) => $q->where('restaurant_id', $tenant->getKey()));
-    }
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        return auth()->user()?->hasAnyRole(['Owner', 'Manager', 'Staff']) ?? false;
     }
 }

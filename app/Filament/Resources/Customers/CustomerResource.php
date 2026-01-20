@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Customers;
 
+use App\Enums\UserRole;
 use App\Filament\Resources\Customers\Pages\CreateCustomer;
 use App\Filament\Resources\Customers\Pages\EditCustomer;
 use App\Filament\Resources\Customers\Pages\ListCustomers;
@@ -19,6 +20,14 @@ use Illuminate\Database\Eloquent\Builder;
 class CustomerResource extends Resource
 {
     protected static ?string $model = Customer::class;
+
+    protected static bool $isScopedToTenant = false;
+
+    // لأن الـCustomer ليس "مملوكًا" للـTenant (لا يوجد restaurants() على Customer)
+    protected static ?string $tenantOwnershipRelationshipName = null;
+
+    // ولأننا سنفلتر يدويًا بالـtenant عبر bookings
+    protected static ?string $tenantRelationshipName = null;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
@@ -60,6 +69,6 @@ class CustomerResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->hasAnyRole(['Owner', 'Manager', 'Staff']) ?? false;
+        return auth()->user()?->role === UserRole::OWNER->value;
     }
 }

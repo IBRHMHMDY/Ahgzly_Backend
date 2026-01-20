@@ -2,11 +2,13 @@
 
 namespace App\Filament\Resources\Bookings\Schemas;
 
+use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class BookingForm
@@ -15,43 +17,57 @@ class BookingForm
     {
         return $schema
             ->components([
-                Hidden::make('restaurant_id')
-                    ->default(fn () => Filament::getTenant()?->getKey())
-                    ->required(),
-                Hidden::make('created_by')
-                    ->default(fn () => auth()->id()),
-                Select::make('restaurant_id')
-                    ->relationship('restaurant', 'name')
-                    ->required(),
-                Select::make('customer_id')
-                    ->relationship(
-                        name: 'customer',
-                        titleAttribute: 'name',
-                        modifyQueryUsing: function (Builder $query) {
-                            $tenant = \Filament\Facades\Filament::getTenant();
+                Section::make('بيانات الحجز')
+                    ->schema([
+                        // اختيار العميل: يجب أن يظهر عملاء المطعم الحالي فقط
+                        // Filament يتعامل مع الـ Scoping تلقائياً إذا كانت العلاقات صحيحة
+                        Select::make('customer_id')
+                            ->label('العميل')
+                            ->relationship('customer', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->createOptionForm([
+                                TextInput::make('name')
+                                    ->required()
+                                    ->label('الاسم'),
+                                TextInput::make('phone')
+                                    ->required()
+                                    ->tel()
+                                    ->label('رقم الهاتف'),
+                            ]),
 
-                            return $query->when($tenant, fn ($q) => $q->where('restaurant_id', $tenant->getKey()));
-                        }
-                    )
-                    ->searchable()
-                    ->required(),
-                TextInput::make('created_by')
-                    ->numeric()
-                    ->default(null),
-                DatePicker::make('booking_date')
-                    ->required(),
-                DateTimePicker::make('start_at'),
-                DateTimePicker::make('end_at'),
-                TextInput::make('guests_count')
-                    ->required()
-                    ->numeric()
-                    ->default(1),
-                TextInput::make('status')
-                    ->required()
-                    ->default('pending'),
-                Textarea::make('notes')
-                    ->default(null)
-                    ->columnSpanFull(),
+                        DatePicker::make('booking_date')
+                            ->label('تاريخ الحجز')
+                            ->required()
+                            ->default(now()),
+
+                        TimePicker::make('start_at')
+                            ->label('وقت الحضور')
+                            ->seconds(false)
+                            ->required(),
+
+                        TextInput::make('guests_count')
+                            ->label('عدد الضيوف')
+                            ->numeric()
+                            ->default(2)
+                            ->required(),
+
+                        Select::make('status')
+                            ->label('حالة الحجز')
+                            ->options([
+                                'pending' => 'قيد الانتظار',
+                                'confirmed' => 'مؤكد',
+                                'cancelled' => 'ملغي',
+                                'completed' => 'مكتمل',
+                            ])
+                            ->default('pending')
+                            ->required(),
+
+                        Textarea::make('notes')
+                            ->label('ملاحظات')
+                            ->columnSpanFull(),
+                    ])->columns(2),
             ]);
     }
 }

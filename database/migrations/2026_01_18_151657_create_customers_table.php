@@ -25,13 +25,15 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->string('name');
-            $table->string('phone')->nullable();
             $table->string('email')->nullable();
-
+            $table->integer('phone')->nullable();
+            $table->string('password')->default('000000');
             $table->timestamps();
 
             $table->index(['restaurant_id', 'phone']);
             $table->index(['restaurant_id', 'email']);
+            $table->unique(['restaurant_id', 'phone']);
+
         });
     }
 

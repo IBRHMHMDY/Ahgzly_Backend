@@ -9,7 +9,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Customer extends Model
 {
     protected $fillable = [
-        'restaurant_id', 'user_id', 'name', 'phone', 'email',
+        'restaurant_id',
+        'name',
+        'email',
+        'phone',
     ];
 
     public function restaurant(): BelongsTo

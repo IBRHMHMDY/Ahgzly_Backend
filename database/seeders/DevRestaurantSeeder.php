@@ -24,8 +24,8 @@ class DevRestaurantSeeder extends Seeder
             [
                 'owner_id' => $owner->id,
                 'name' => 'Demo Restaurant',
-                'phone' => null,
-                'address' => null,
+                'phone' => '01007564589',
+                'address' => 'Suez',
                 'is_active' => true,
             ]
         );

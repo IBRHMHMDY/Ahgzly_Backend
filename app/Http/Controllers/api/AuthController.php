@@ -3,77 +3,92 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\Auth\LoginRequest;
-use App\Http\Requests\Api\Auth\RegisterRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+use Spatie\Permission\Models\Role;
 
 class AuthController extends Controller
 {
-    public function register(RegisterRequest $request)
+    // تسجيل حساب جديد (للعملاء فقط)
+    public function register(Request $request)
     {
-        $user = User::query()->create([
-            'name' => $request->string('name'),
-            'email' => $request->string('email'),
-            'password' => Hash::make($request->string('password')),
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'phone' => 'required|string|max:20|unique:users', // مهم للحجوزات
+            'password' => 'required|string|min:8|confirmed',
         ]);
 
-        $user->assignRole('Customer');
+        // 1. إنشاء المستخدم
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'password' => Hash::make($request->password),
+        ]);
 
-        $token = $user->createToken('customer-token')->plainTextToken;
+        // 2. تعيين دور Customer (تأكد أن الدور موجود في القاعدة)
+        // نستخدم firstOrCreate لضمان عدم حدوث خطأ إذا لم يكن الدور موجوداً
+        $customerRole = Role::firstOrCreate(['name' => 'Customer', 'guard_name' => 'web']);
+        $user->assignRole($customerRole);
+
+        // 3. إنشاء Token
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Registered successfully',
-            'data' => [
-                'user' => $user,
-                'token' => $token,
-            ],
+            'message' => 'User registered successfully',
+            'data' => $user,
+            'token' => $token,
         ], 201);
     }
 
-    public function login(LoginRequest $request)
+    // تسجيل الدخول
+    public function login(Request $request)
     {
-        $user = User::query()->where('email', $request->string('email'))->first();
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
 
-        if (! $user || ! Hash::check($request->string('password'), $user->password)) {
-            return response()->json([
-                'message' => 'Invalid credentials',
-            ], 422);
+        $user = User::where('email', $request->email)->first();
+
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['البيانات المدخلة غير صحيحة.'],
+            ]);
         }
 
-        $deviceName = $request->string('device_name')->toString() ?: 'customer-device';
+        // اختياري: منع الموظفين من الدخول عبر تطبيق العملاء (حسب رغبتك)
+        // if (! $user->hasRole('Customer')) { ... }
 
-        // خيار: حذف توكنات قديمة لنفس المستخدم (حسب سياستك)
-        $user->tokens()->delete();
-
-        $token = $user->createToken($deviceName)->plainTextToken;
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Logged in successfully',
-            'data' => [
-                'user' => $user,
-                'token' => $token,
-            ],
+            'message' => 'Login successful',
+            'data' => $user,
+            'token' => $token,
+            // نرسل الأدوار ليتمكن الفرونت إند من توجيه المستخدم
+            'roles' => $user->getRoleNames(),
+        ]);
+    }
+
+    // تسجيل الخروج
+    public function logout(Request $request)
+    {
+        // حذف التوكن الحالي فقط
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'message' => 'Logged out successfully',
         ]);
     }
 
     public function me(Request $request)
     {
         return response()->json([
-            'data' => [
-                'user' => $request->user(),
-            ],
-        ]);
-    }
-
-    public function logout(Request $request)
-    {
-        // حذف التوكن الحالي فقط
-        $request->user()?->currentAccessToken()?->delete();
-
-        return response()->json([
-            'message' => 'Logged out successfully',
+            'data' => $request->user(),
         ]);
     }
 }

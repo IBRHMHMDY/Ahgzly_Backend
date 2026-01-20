@@ -3,29 +3,22 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\RestaurantResource;
 use App\Models\Restaurant;
 
 class RestaurantController extends Controller
 {
     public function index()
     {
-        $restaurants = Restaurant::query()
-            ->where('is_active', true)
-            ->select(['id', 'name', 'slug', 'phone', 'address'])
-            ->orderBy('name')
-            ->paginate(20);
+        $restaurants = Restaurant::where('is_active', true)->get();
 
-        return response()->json([
-            'data' => $restaurants,
-        ]);
+        return RestaurantResource::collection($restaurants);
     }
 
-    public function show(Restaurant $restaurant)
+    public function show($id)
     {
-        abort_unless($restaurant->is_active, 404);
+        $restaurant = Restaurant::where('is_active', true)->findOrFail($id);
 
-        return response()->json([
-            'data' => $restaurant->only(['id', 'name', 'slug', 'phone', 'address']),
-        ]);
+        return new RestaurantResource($restaurant);
     }
 }

@@ -10,6 +10,14 @@ class EditCustomer extends EditRecord
 {
     protected static string $resource = CustomerResource::class;
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // منع تغيير restaurant_id
+        unset($data['restaurant_id']);
+
+        return $data;
+    }
+
     protected function getHeaderActions(): array
     {
         return [

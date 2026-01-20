@@ -8,12 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Booking extends Model
 {
     protected $fillable = [
-        'restaurant_id',
         'customer_id',
-        'created_by',
+        'restaurant_id',
         'booking_date',
         'start_at',
-        'end_at',
         'guests_count',
         'status',
         'notes',
@@ -21,8 +19,7 @@ class Booking extends Model
 
     protected $casts = [
         'booking_date' => 'date',
-        'start_at' => 'datetime',
-        'end_at' => 'datetime',
+        'guests_count' => 'integer',
     ];
 
     public function restaurant(): BelongsTo
@@ -33,10 +30,5 @@ class Booking extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
-    }
-
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
     }
 }

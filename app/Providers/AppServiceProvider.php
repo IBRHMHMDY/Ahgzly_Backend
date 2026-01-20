@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Models\Booking;
 use App\Models\Customer;
+use App\Models\User;
+use App\Observers\UserObserver;
 use App\Policies\BookingPolicy;
 use App\Policies\CustomerPolicy;
 use Illuminate\Support\Facades\Gate;
@@ -24,7 +26,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::policy(Customer::class, CustomerPolicy::class);
-        Gate::policy(Booking::class, BookingPolicy::class);
+        // User::observe(UserObserver::class);
+        // Gate::policy(Customer::class, CustomerPolicy::class);
+        // Gate::policy(Booking::class, BookingPolicy::class);
     }
 }

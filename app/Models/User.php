@@ -23,7 +23,9 @@ class User extends Authenticatable implements FilamentUser, HasDefaultTenant, Ha
     protected $fillable = [
         'name',
         'email',
+        'phone',
         'password',
+        // 'role', // حذفت هذا لأنه مكرر، سنعتمد على Spatie
     ];
 
     protected $hidden = [
@@ -31,13 +33,11 @@ class User extends Authenticatable implements FilamentUser, HasDefaultTenant, Ha
         'remember_token',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+    protected $casts = [
+        'password' => 'hashed',
+    ];
+
+    // --- العلاقات ---
 
     public function ownedRestaurants(): HasMany
     {
@@ -46,63 +46,64 @@ class User extends Authenticatable implements FilamentUser, HasDefaultTenant, Ha
 
     public function restaurants(): BelongsToMany
     {
-        return $this->belongsToMany(Restaurant::class)
+        return $this->belongsToMany(Restaurant::class, 'restaurant_user')
             ->withPivot(['is_default', 'is_active'])
             ->withTimestamps();
     }
 
-    /**
-     * هل المستخدم مرتبط بهذا المطعم (Owner عبر owner_id أو أي دور عبر pivot)
-     */
-    public function canAccessRestaurant(int $restaurantId): bool
-    {
-        if ($this->hasRole('Owner') && $this->ownedRestaurants()->whereKey($restaurantId)->exists()) {
-            return true;
-        }
-
-        return $this->restaurants()
-            ->whereKey($restaurantId)
-            ->wherePivot('is_active', true)
-            ->exists();
-    }
+    // --- منطق Filament والوصول ---
 
     public function canAccessPanel(Panel $panel): bool
     {
-        // فقط أدوار Filament
+        // Spatie Check: هل يملك أي دور إداري؟
         return $this->hasAnyRole(['Owner', 'Manager', 'Staff']);
     }
 
     public function getTenants(Panel $panel): Collection
     {
-        // Owner: المطاعم التي يملكها
-        if ($this->hasRole('Owner')) {
-            return $this->ownedRestaurants()->where('is_active', true)->get();
-        }
+        // نجمع المطاعم المملوكة + المطاعم التي يعمل بها
+        $owned = $this->ownedRestaurants()->where('is_active', true)->get();
 
-        // Manager/Staff: المطاعم المرتبط بها عبر pivot
-        return $this->restaurants()
+        $workedAt = $this->restaurants()
             ->where('restaurants.is_active', true)
             ->wherePivot('is_active', true)
             ->get();
+
+        return $owned->merge($workedAt)->unique('id');
     }
 
     public function canAccessTenant(Model $tenant): bool
     {
         /** @var Restaurant $tenant */
-        return $this->canAccessRestaurant($tenant->id);
+
+        // 1. هل هو المالك؟
+        if ($this->ownedRestaurants()->whereKey($tenant->id)->exists()) {
+            return true;
+        }
+
+        // 2. هل هو موظف مفعل؟
+        return $this->restaurants()
+            ->whereKey($tenant->id)
+            ->wherePivot('is_active', true)
+            ->exists();
     }
 
     public function getDefaultTenant(Panel $panel): ?Model
     {
-        // 1) لو في pivot مطعم افتراضي
+        // الأولوية للمطعم المحدد كـ default في الـ pivot
         $default = $this->restaurants()
             ->wherePivot('is_active', true)
             ->wherePivot('is_default', true)
             ->first();
 
-        // 2) لو Owner ومفيش default في pivot: أول مطعم يملكه
-        if (! $default && $this->hasRole('Owner')) {
+        // إذا لم يوجد، نأخذ أول مطعم يملكه
+        if (! $default) {
             $default = $this->ownedRestaurants()->where('is_active', true)->first();
+        }
+
+        // إذا لم يوجد، نأخذ أول مطعم يعمل به
+        if (! $default) {
+            $default = $this->restaurants()->where('restaurants.is_active', true)->first();
         }
 
         return $default;

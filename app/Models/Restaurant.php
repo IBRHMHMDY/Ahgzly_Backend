@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Restaurant extends Model
 {
     protected $fillable = [
-        'owner_id', 'name', 'slug', 'phone', 'address', 'is_active',
+        'owner_id', 'name', 'slug', 'phone', 'address', 'is_active', 'is_default',
     ];
 
     public function owner(): BelongsTo
@@ -19,7 +19,7 @@ class Restaurant extends Model
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class)
+        return $this->belongsToMany(User::class, 'restaurant_user')
             ->withPivot(['is_default', 'is_active'])
             ->withTimestamps();
     }

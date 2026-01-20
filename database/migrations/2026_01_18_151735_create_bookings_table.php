@@ -29,8 +29,8 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->date('booking_date');
-            $table->dateTime('start_at')->nullable();
-            $table->dateTime('end_at')->nullable();
+            $table->time('start_at')->nullable(); // تغيير النوع إلى time
+            $table->time('end_at')->nullable();   // تغيير النوع إلى time
 
             $table->unsignedSmallInteger('guests_count')->default(1);
 
