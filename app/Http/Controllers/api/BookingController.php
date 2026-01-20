@@ -54,6 +54,19 @@ class BookingController extends Controller
             ]
         );
 
+        // التحقق من وجود نفس الحجز بالوقت والتاريخ
+        $exists = Booking::where('restaurant_id', $restaurant->id)
+            ->where('customer_id', $customer->id)
+            ->where('booking_date', $request->booking_date)
+            ->where('start_at', $request->start_at)
+            ->where('status', '!=', 'cancelled') // مسموح بالحجز إذا كان السابق ملغياً
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'message' => 'عذراً، لديك حجز مؤكد بالفعل في هذا التوقيت.',
+            ], 422);
+        }
         // --- إنشاء الحجز ---
         $booking = Booking::create([
             'customer_id' => $customer->id,

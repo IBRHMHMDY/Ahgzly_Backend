@@ -2,10 +2,8 @@
 
 namespace App\Filament\Resources\Customers\Schemas;
 
-use Filament\Facades\Filament;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class CustomerForm
@@ -14,21 +12,24 @@ class CustomerForm
     {
         return $schema
             ->components([
-                Hidden::make('restaurant_id')
-                    ->default(fn () => Filament::getTenant()?->getKey())
-                    ->required(),
-                Select::make('user_id')
-                    ->relationship('user', 'name')
-                    ->default(null),
-                TextInput::make('name')
-                    ->required(),
-                TextInput::make('phone')
-                    ->tel()
-                    ->default(null),
-                TextInput::make('email')
-                    ->label('Email address')
-                    ->email()
-                    ->default(null),
+                Section::make('بيانات العميل')
+                    ->schema([
+                        TextInput::make('name')
+                            ->label('الاسم')
+                            ->required()
+                            ->maxLength(255),
+
+                        TextInput::make('phone')
+                            ->label('رقم الهاتف')
+                            ->tel()
+                            ->required()
+                            ->maxLength(20),
+
+                        TextInput::make('email')
+                            ->label('البريد الإلكتروني')
+                            ->email()
+                            ->maxLength(255),
+                    ])->columns(2),
             ]);
     }
 }

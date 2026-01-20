@@ -2,36 +2,29 @@
 
 namespace App\Filament\Resources\Customers;
 
-use App\Enums\UserRole;
 use App\Filament\Resources\Customers\Pages\CreateCustomer;
 use App\Filament\Resources\Customers\Pages\EditCustomer;
 use App\Filament\Resources\Customers\Pages\ListCustomers;
+use App\Filament\Resources\Customers\RelationManagers\BookingsRelationManager;
 use App\Filament\Resources\Customers\Schemas\CustomerForm;
 use App\Filament\Resources\Customers\Tables\CustomersTable;
 use App\Models\Customer;
-use BackedEnum;
-use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class CustomerResource extends Resource
 {
     protected static ?string $model = Customer::class;
 
-    protected static bool $isScopedToTenant = false;
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-user-group';
 
-    // لأن الـCustomer ليس "مملوكًا" للـTenant (لا يوجد restaurants() على Customer)
-    protected static ?string $tenantOwnershipRelationshipName = null;
+    protected static ?string $navigationLabel = 'العملاء';
 
-    // ولأننا سنفلتر يدويًا بالـtenant عبر bookings
-    protected static ?string $tenantRelationshipName = null;
+    protected static ?int $navigationSort = 3;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
-
-    protected static ?string $recordTitleAttribute = 'Customers';
+    // تفعيل السكوب لأن جدول العملاء يحتوي على restaurant_id
+    protected static bool $isScopedToTenant = true;
 
     public static function form(Schema $schema): Schema
     {
@@ -46,7 +39,8 @@ class CustomerResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            // سنضيف علاقة الحجوزات هنا في الخطوة القادمة
+            BookingsRelationManager::class,
         ];
     }
 
@@ -57,18 +51,5 @@ class CustomerResource extends Resource
             'create' => CreateCustomer::route('/create'),
             'edit' => EditCustomer::route('/{record}/edit'),
         ];
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        $tenant = Filament::getTenant();
-
-        return parent::getEloquentQuery()
-            ->when($tenant, fn (Builder $q) => $q->where('restaurant_id', $tenant->getKey()));
-    }
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        return auth()->user()?->role === UserRole::OWNER->value;
     }
 }

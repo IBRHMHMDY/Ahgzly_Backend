@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Bookings\Schemas;
 
+use App\Models\Booking;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -9,6 +10,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
 class BookingForm
@@ -45,14 +47,35 @@ class BookingForm
                         TimePicker::make('start_at')
                             ->label('وقت الحضور')
                             ->seconds(false)
-                            ->required(),
+                            ->required()
+                            ->rule(function (Get $get) {
+                                return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                    // نجلب البيانات من الحقول الأخرى في الفورم
+                                    $customerId = $get('customer_id');
+                                    $date = $get('booking_date');
 
+                                    // إذا كانت البيانات ناقصة لا نفحص
+                                    if (! $customerId || ! $date || ! $value) {
+                                        return;
+                                    }
+
+                                    // نبحث عن تكرار
+                                    $exists = Booking::where('customer_id', $customerId)
+                                        ->where('booking_date', $date)
+                                        ->where('start_at', $value) // الوقت المدخل
+                                        ->where('status', '!=', 'cancelled')
+                                        ->exists();
+
+                                    if ($exists) {
+                                        $fail('يوجد حجز مسجل لهذا العميل في نفس التوقيت.');
+                                    }
+                                };
+                            }),
                         TextInput::make('guests_count')
                             ->label('عدد الضيوف')
                             ->numeric()
                             ->default(2)
                             ->required(),
-
                         Select::make('status')
                             ->label('حالة الحجز')
                             ->options([
@@ -63,11 +86,11 @@ class BookingForm
                             ])
                             ->default('pending')
                             ->required(),
-
                         Textarea::make('notes')
                             ->label('ملاحظات')
                             ->columnSpanFull(),
-                    ])->columns(2),
+                    ])
+                    ->columns(2),
             ]);
     }
 }

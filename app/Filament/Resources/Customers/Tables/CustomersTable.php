@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\Customers\Tables;
 
-use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
@@ -14,22 +14,29 @@ class CustomersTable
     {
         return $table
             ->columns([
-                TextColumn::make('restaurant.name')
-                    ->searchable(),
-                TextColumn::make('user.name')
-                    ->searchable(),
                 TextColumn::make('name')
-                    ->searchable(),
+                    ->label('الاسم')
+                    ->searchable()
+                    ->sortable(),
+
                 TextColumn::make('phone')
+                    ->label('الهاتف')
                     ->searchable(),
+
                 TextColumn::make('email')
-                    ->label('Email address')
-                    ->searchable(),
+                    ->label('البريد')
+                    ->icon('heroicon-m-envelope'),
+
+                // عمود محسوب: عدد الحجوزات لهذا العميل
+                TextColumn::make('bookings_count')
+                    ->counts('bookings')
+                    ->label('عدد الحجوزات')
+                    ->badge()
+                    ->color('info')
+                    ->sortable(),
+
                 TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
+                    ->label('تاريخ التسجيل')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -37,13 +44,12 @@ class CustomersTable
             ->filters([
                 //
             ])
-            ->recordActions([
+            ->actions([
                 EditAction::make(),
+                DeleteAction::make(),
             ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+            ->bulkActions([
+                DeleteBulkAction::make(),
             ]);
     }
 }
