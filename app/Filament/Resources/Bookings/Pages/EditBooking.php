@@ -24,4 +24,10 @@ class EditBooking extends EditRecord
             DeleteAction::make(),
         ];
     }
+
+    protected function getRedirectUrl(): string
+    {
+        // التوجيه لصفحة القائمة (الجدول) بدلاً من صفحة التعديل
+        return $this->getResource()::getUrl('index');
+    }
 }

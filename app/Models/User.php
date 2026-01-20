@@ -25,7 +25,6 @@ class User extends Authenticatable implements FilamentUser, HasDefaultTenant, Ha
         'email',
         'phone',
         'password',
-        // 'role', // حذفت هذا لأنه مكرر، سنعتمد على Spatie
     ];
 
     protected $hidden = [

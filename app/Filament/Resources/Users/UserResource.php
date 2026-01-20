@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Users;
 
-use App\Enums\UserRole;
 use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
@@ -10,11 +9,11 @@ use App\Filament\Resources\Users\Schemas\UserForm;
 use App\Filament\Resources\Users\Schemas\UserInfolist;
 use App\Filament\Resources\Users\Tables\UsersTable;
 use App\Models\User;
-use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class UserResource extends Resource
 {
@@ -26,15 +25,34 @@ class UserResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
-    // تفعيل الـ Tenancy Scope لهذا الـ Resource
-    protected static bool $isScopedToTenant = false;
+    // 1. تفعيل السكوب الخاص بالـ Tenant
+    protected static bool $isScopedToTenant = true;
+
+    // 2. تحديد اسم العلاقة الموجودة في مودل User والتي تربطه بالمطعم
+    protected static ?string $tenantRelationshipName = 'restaurants';
+
+    protected static ?string $tenantOwnershipRelationshipName = 'restaurants';
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->whereHas('restaurants', function ($query) {
-                $query->where('restaurants.id', Filament::getTenant()->id);
+        // 1. نبدأ بالاستعلام الأساسي
+        $query = parent::getEloquentQuery();
+        $user = Auth::user();
+        // 2. إخفاء المستخدم الحالي (أنا لا أرى نفسي) - كما فعلنا سابقاً
+        $query->where('id', '!=', Auth::id());
+
+        // 3. 👇 الإضافة الجديدة: إخفاء أي مستخدم لديه دور 'Owner'
+        $query->whereDoesntHave('roles', function (Builder $q) {
+            $q->where('name', 'Owner');
+        });
+        // إذا كان المستخدم مدير، يرى فقط الـ Staff في هذا المطعم
+        if ($user->hasRole('Manager')) {
+            $query->whereHas('roles', function (Builder $q) {
+                $q->where('name', 'Staff');
             });
+        }
+
+        return $query;
     }
 
     public static function form(Schema $schema): Schema
@@ -67,55 +85,4 @@ class UserResource extends Resource
             'edit' => EditUser::route('/{record}/edit'),
         ];
     }
-
-    // /* ==============================
-    //     Permissions
-    // ============================== */
-
-    // public static function canViewAny(): bool
-    // {
-    //     return in_array(auth()->user()->role, [
-    //         UserRole::OWNER,
-    //         UserRole::MANAGER,
-    //         UserRole::STAFF,
-    //     ]);
-    // }
-
-    // public static function canAccess(): bool
-    // {
-    //     return auth()->user()?->role === UserRole::OWNER->value;
-    // }
-
-    // public static function canCreate(): bool
-    // {
-    //     return in_array(
-    //         auth()->user()?->role,
-    //         [
-    //             UserRole::OWNER->value,
-    //             UserRole::MANAGER->value,
-    //         ]
-    //     );
-    // }
-
-    // public static function canEdit($record): bool
-    // {
-    //     return in_array(
-    //         auth()->user()?->role,
-    //         [
-    //             UserRole::OWNER->value,
-    //             UserRole::MANAGER->value,
-    //         ]
-    //     );
-    // }
-
-    // public static function canDelete($record): bool
-    // {
-    //     return in_array(
-    //         auth()->user()?->role,
-    //         [
-    //             UserRole::OWNER->value,
-    //             UserRole::MANAGER->value,
-    //         ]
-    //     );
-    // }
 }

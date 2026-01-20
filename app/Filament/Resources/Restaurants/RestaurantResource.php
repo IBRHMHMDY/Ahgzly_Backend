@@ -3,25 +3,41 @@
 namespace App\Filament\Resources\Restaurants;
 
 use App\Filament\Resources\Restaurants\Pages\CreateRestaurant;
+// نحتاجها للـ Slug
+// نحتاجها للـ Slug
 use App\Filament\Resources\Restaurants\Pages\EditRestaurant;
 use App\Filament\Resources\Restaurants\Pages\ListRestaurants;
 use App\Filament\Resources\Restaurants\Schemas\RestaurantForm;
 use App\Filament\Resources\Restaurants\Tables\RestaurantsTable;
 use App\Models\Restaurant;
-use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class RestaurantResource extends Resource
 {
     protected static ?string $model = Restaurant::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-building-storefront';
 
-    protected static ?string $recordTitleAttribute = 'Restaurants';
+    protected static ?string $navigationLabel = 'إدارة المطاعم';
+
+    protected static ?int $navigationSort = 0; // نضعه في الأول
+
+    // 🔴 هام جداً: نلغي السكوب التلقائي لنسمح للمالك برؤية كل فروعه وإدارتها
+    protected static bool $isScopedToTenant = false;
+
+    // protected static ?string $tenantOwnershipRelationshipName = 'restaurants';
+
+    // ✅ ونقوم نحن بالفلترة يدوياً: المالك يرى مطاعمه فقط
+    public static function getEloquentQuery(): Builder
+    {
+        // إذا كان المستخدم Super Admin (مستقبلاً) يرى الكل
+        // حالياً: المالك يرى ما يملكه فقط
+        return parent::getEloquentQuery()->where('owner_id', Auth::id());
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -48,26 +64,4 @@ class RestaurantResource extends Resource
             'edit' => EditRestaurant::route('/{record}/edit'),
         ];
     }
-
-    protected static bool $isScopedToTenant = false;
-
-    // public static function getEloquentQuery(): Builder
-    // {
-    //     $query = parent::getEloquentQuery();
-
-    //     $user = auth()->user();
-
-    //     // Owner يرى مطاعمه فقط
-    //     return $query->when($user?->hasRole('Owner'), fn (Builder $q) => $q->where('owner_id', $user->id));
-    // }
-
-    // public static function canViewAny(): bool
-    // {
-    //     return auth()->user()?->hasRole('Owner');
-    // }
-
-    // public static function shouldRegisterNavigation(): bool
-    // {
-    //     return auth()->user()?->hasAnyRole(['Owner', 'Manager']) ?? false;
-    // }
 }

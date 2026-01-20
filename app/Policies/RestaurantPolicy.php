@@ -2,35 +2,38 @@
 
 namespace App\Policies;
 
-// use App\Enums\UserRole;
-// use App\Models\Restaurant;
-// use App\Models\User;
+use App\Models\Restaurant;
+use App\Models\User;
 
 class RestaurantPolicy
 {
-    // public function viewAny(User $user): bool
-    // {
-    //     return $user->role === UserRole::OWNER->value;
-    // }
+    // السماح برؤية القائمة: للمالك فقط
+    public function viewAny(User $user): bool
+    {
+        return true;
+    }
 
-    // public function view(User $user, Restaurant $restaurant): bool
-    // {
-    //     return $user->role === UserRole::OWNER->value
-    //         && $user->restaurants()->whereKey($restaurant->getKey())->exists();
-    // }
+    // السماح برؤية التفاصيل: للمالك فقط، وفقط لمطاعمه
+    public function view(User $user, Restaurant $restaurant): bool
+    {
+        return $user->hasRole('Owner') && $restaurant->owner_id === $user->id;
+    }
 
-    // public function create(User $user): bool
-    // {
-    //     return $user->role === UserRole::OWNER->value;
-    // }
+    // السماح بالإضافة: للمالك فقط
+    public function create(User $user): bool
+    {
+        return $user->hasRole('Owner');
+    }
 
-    // public function update(User $user, Restaurant $restaurant): bool
-    // {
-    //     return $this->view($user, $restaurant);
-    // }
+    // السماح بالتعديل: للمالك فقط، ولمطاعمه
+    public function update(User $user, Restaurant $restaurant): bool
+    {
+        return $user->hasRole('Owner') && $restaurant->owner_id === $user->id;
+    }
 
-    // public function delete(User $user, Restaurant $restaurant): bool
-    // {
-    //     return $this->view($user, $restaurant);
-    // }
+    // السماح بالحذف: للمالك فقط، ولمطاعمه
+    public function delete(User $user, Restaurant $restaurant): bool
+    {
+        return $user->hasRole('Owner') && $restaurant->owner_id === $user->id;
+    }
 }

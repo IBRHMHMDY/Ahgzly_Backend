@@ -25,6 +25,9 @@ class BookingResource extends Resource
     // ✅ اتركها true هنا لأن الجدول يحتوي على restaurant_id
     protected static bool $isScopedToTenant = true;
 
+    // الحجز يتبع مطعماً واحداً (علاقة مفردة)
+    protected static ?string $tenantOwnershipRelationshipName = 'restaurant';
+
     public static function form(Schema $schema): Schema
     {
         return BookingForm::configure($schema);

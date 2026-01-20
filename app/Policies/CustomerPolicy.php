@@ -9,26 +9,26 @@ class CustomerPolicy
 {
     public function viewAny(User $user): bool
     {
-        return true;
+        return $user->hasAnyRole(['Owner', 'Manager', 'Staff']);
     }
 
     public function view(User $user, Customer $customer): bool
     {
-        return true;
+        return $user->hasAnyRole(['Owner', 'Manager', 'Staff']);
     }
 
     public function create(User $user): bool
     {
-        return true;
+        return false;
     }
 
     public function update(User $user, Customer $customer): bool
     {
-        return true;
+        return false;
     }
 
     public function delete(User $user, Customer $customer): bool
     {
-        return true;
+        return false;
     }
 }
