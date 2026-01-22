@@ -21,7 +21,6 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        // 1. إنشاء المستخدم
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -29,12 +28,9 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // 2. تعيين دور Customer (تأكد أن الدور موجود في القاعدة)
-        // نستخدم firstOrCreate لضمان عدم حدوث خطأ إذا لم يكن الدور موجوداً
         $customerRole = Role::firstOrCreate(['name' => 'Customer', 'guard_name' => 'web']);
         $user->assignRole($customerRole);
 
-        // 3. إنشاء Token
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
