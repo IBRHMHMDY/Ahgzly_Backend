@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\HasDatabaseNotifications;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 use Laravel\Sanctum\HasApiTokens;
@@ -18,7 +19,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser, HasDefaultTenant, HasTenants
 {
-    use HasApiTokens, HasFactory, HasRoles, Notifiable;
+    use HasApiTokens, HasDatabaseNotifications, HasFactory, HasRoles, Notifiable;
 
     protected $fillable = [
         'name',
@@ -32,8 +33,17 @@ class User extends Authenticatable implements FilamentUser, HasDefaultTenant, Ha
         'remember_token',
     ];
 
+    const STATUS_PENDING = 'pending';   // قيد الانتظار
+
+    const STATUS_CONFIRMED = 'confirmed'; // تم التأكيد
+
+    const STATUS_ATTENDED = 'attended';   // حضر العميل
+
+    const STATUS_CANCELLED = 'cancelled'; // ملغي
+
     protected $casts = [
         'password' => 'hashed',
+        'status' => 'string',
     ];
 
     // --- العلاقات ---
@@ -51,6 +61,14 @@ class User extends Authenticatable implements FilamentUser, HasDefaultTenant, Ha
     }
 
     // --- منطق Filament والوصول ---
+    public function getFilamentName(): string
+    {
+        // هنا نعرض الاسم وبجانبه الدور (مثلاً: أدمن)
+        // افترضنا أن لديك عمود اسمه role أو يمكنك جلبه من جدول الصلاحيات
+        $role = $this->role ?? 'مستخدم';
+
+        return "{$this->name} | {$role}";
+    }
 
     public function canAccessPanel(Panel $panel): bool
     {

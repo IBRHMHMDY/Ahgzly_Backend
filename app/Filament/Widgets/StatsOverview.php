@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\Auth;
 
 class StatsOverview extends BaseWidget
 {
@@ -11,7 +12,7 @@ class StatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $tenantId = \Filament\Facades\Filament::getTenant()?->id;
 
         // مصفوفة الإحصائيات الأساسية (تظهر للجميع حسب المطعم الحالي)

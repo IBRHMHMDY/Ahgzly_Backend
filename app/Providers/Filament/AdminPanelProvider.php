@@ -2,10 +2,13 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Auth\Pages\EditProfile;
+use App\Filament\Pages\EditProfile;
+use App\Filament\Pages\Settings;
 use App\Filament\Widgets\BookingsChart;
 use App\Filament\Widgets\StatsOverview;
 use App\Models\Restaurant;
+use Filament\Actions\Action;
+use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -30,10 +33,27 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->profile(EditProfile::class)
-
             ->colors([
                 'primary' => Color::Amber,
+            ])
+            // 👇 1. تفعيل أيقونة الإشعارات (الجرس) بجانب البروفايل
+            ->databaseNotifications()
+
+            // 👇 2. تخصيص قائمة المستخدم (User Menu)
+            ->userMenuItems([
+                // إضافة زر "الإعدادات"
+                Action::make('settings')
+                    ->label('الإعدادات')
+                    ->url(fn () => Settings::getUrl(tenant: Filament::getTenant())) // ضع رابط صفحة الإعدادات الخاصة بك هنا
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->sort(1),
+
+                // يمكنك أيضاً تخصيص زر "الملف الشخصي" إذا أردت
+                Action::make('profile')
+                    ->label('ملفي الشخصي')
+                    ->url(fn (): string => EditProfile::getUrl())
+                    ->icon('heroicon-o-user')
+                    ->sort(2),
             ])
             // --- إعدادات الـ Multi-Tenancy ---
             ->tenant(Restaurant::class, slugAttribute: 'slug')

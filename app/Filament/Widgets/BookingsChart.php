@@ -14,6 +14,8 @@ class BookingsChart extends ChartWidget
 
     protected int|string|array $columnSpan = 'full';
 
+    protected ?string $maxHeight = '300px';
+
     protected function getData(): array
     {
         $tenantId = Filament::getTenant()?->id;

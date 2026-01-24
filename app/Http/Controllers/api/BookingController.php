@@ -33,7 +33,7 @@ class BookingController extends Controller
         $request->validate([
             'restaurant_id' => 'required|exists:restaurants,id',
             'booking_date' => 'required|date|after_or_equal:today',
-            'start_at' => 'required', // يمكن تحسين التحقق من صيغة الوقت
+            'start_at' => 'required|date_format:H:i',
             'guests_count' => 'required|integer|min:1',
             'notes' => 'nullable|string',
         ]);

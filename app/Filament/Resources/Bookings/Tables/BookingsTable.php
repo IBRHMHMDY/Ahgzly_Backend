@@ -2,10 +2,12 @@
 
 namespace App\Filament\Resources\Bookings\Tables;
 
+use App\Models\Booking;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
+use Filament\Actions\EditAction as ActionsEditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
@@ -43,13 +45,21 @@ class BookingsTable
                     ->badge(),
 
                 TextColumn::make('status')
-                    ->label('الحالة')
+                    ->label('حالة الحجز')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'warning',
-                        'confirmed' => 'success',
+                        'pending' => 'gray',
+                        'confirmed' => 'info',
+                        'attended' => 'success',
                         'cancelled' => 'danger',
-                        'completed' => 'info',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'pending' => 'قيد الانتظار',
+                        'confirmed' => 'مؤكد',
+                        'attended' => 'تم الحضور',
+                        'cancelled' => 'ملغي',
+                        default => $state,
                     }),
             ])
             ->filters([
@@ -63,22 +73,52 @@ class BookingsTable
                     ]),
 
                 Filter::make('booking_date')
-                    ->form([
-                        DatePicker::make('date')->label('تاريخ محدد'),
+                    ->schema([
+                        DatePicker::make('from')->label('من تاريخ'),
+                        DatePicker::make('to')->label('إلى تاريخ'),
                     ])
-                    ->query(function (Builder $query, array $data): Builder {
+                    ->query(function (Builder $query, array $data) {
                         return $query
-                            ->when(
-                                $data['date'],
-                                fn (Builder $query, $date) => $query->whereDate('booking_date', $date),
-                            );
+                            ->when($data['from'], fn ($q, $d) => $q->whereDate('booking_date', '>=', $d))
+                            ->when($data['to'], fn ($q, $d) => $q->whereDate('booking_date', '<=', $d));
                     }),
             ])
-            ->actions([
-                EditAction::make(),
-                DeleteAction::make(),
+            ->recordActions([
+                ActionGroup::make([
+                    Action::make('confirm')
+                        ->label('تأكيد الحجز')
+                        ->icon('heroicon-m-check-circle')
+                        ->color('info')
+                        ->requiresConfirmation()
+                        ->action(fn (Booking $record) => $record->update(['status' => 'confirmed']))
+                        ->visible(fn (Booking $record) => $record->status === 'pending'),
+                    Action::make('Cancelled')
+                        ->label('إلغاء الحجز')
+                        ->icon('heroicon-m-check-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(fn (Booking $record) => $record->update(['status' => 'cancelled']))
+                        ->visible(fn (Booking $record) => $record->status === 'pending'),
+
+                    Action::make('attended')
+                        ->label('تم الحضور')
+                        ->icon('heroicon-m-user-plus')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(fn (Booking $record) => $record->update(['status' => 'attended']))
+                        ->visible(fn (Booking $record) => $record->status === 'confirmed'),
+                    Action::make('attended')
+                        ->label('إلغاء الحجز')
+                        ->icon('heroicon-m-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(fn (Booking $record) => $record->update(['status' => 'cancelled']))
+                        ->visible(fn (Booking $record) => $record->status === 'confirmed'),
+
+                    // ActionsEditAction::make(),
+                ]),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
