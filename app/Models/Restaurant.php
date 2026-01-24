@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
+use Filament\Models\Contracts\HasAvatar;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class Restaurant extends Model
+class Restaurant extends Model implements HasAvatar
 {
     protected $fillable = [
-        'owner_id', 'name', 'slug', 'phone', 'address', 'is_active', 'is_default',
+        'owner_id', 'name', 'slug', 'phone', 'address', 'is_active', 'is_default', 'logo',
     ];
 
     public function owner(): BelongsTo
@@ -32,5 +33,14 @@ class Restaurant extends Model
     public function bookings()
     {
         return $this->hasMany(Booking::class);
+    }
+
+    public function getFilamentAvatarUrl(): ?string
+    {
+        if (! $this->logo) {
+            return null; // يرجع للأحرف تلقائياً
+        }
+
+        return asset('storage/'.$this->logo);
     }
 }

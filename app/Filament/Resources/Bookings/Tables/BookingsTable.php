@@ -68,8 +68,8 @@ class BookingsTable
                     ->options([
                         'pending' => 'قيد الانتظار',
                         'confirmed' => 'مؤكد',
+                        'attended' => 'تم الحضور',
                         'cancelled' => 'ملغي',
-                        'completed' => 'مكتمل',
                     ]),
 
                 Filter::make('booking_date')
@@ -86,35 +86,21 @@ class BookingsTable
             ->recordActions([
                 ActionGroup::make([
                     Action::make('confirm')
-                        ->label('تأكيد الحجز')
-                        ->icon('heroicon-m-check-circle')
-                        ->color('info')
-                        ->requiresConfirmation()
+                        ->label('تأكيد')
                         ->action(fn (Booking $record) => $record->update(['status' => 'confirmed']))
                         ->visible(fn (Booking $record) => $record->status === 'pending'),
-                    Action::make('Cancelled')
-                        ->label('إلغاء الحجز')
-                        ->icon('heroicon-m-check-circle')
-                        ->color('danger')
-                        ->requiresConfirmation()
-                        ->action(fn (Booking $record) => $record->update(['status' => 'cancelled']))
-                        ->visible(fn (Booking $record) => $record->status === 'pending'),
 
-                    Action::make('attended')
-                        ->label('تم الحضور')
-                        ->icon('heroicon-m-user-plus')
-                        ->color('success')
-                        ->requiresConfirmation()
+                    Action::make('attend')
+                        ->label('حضر')
                         ->action(fn (Booking $record) => $record->update(['status' => 'attended']))
                         ->visible(fn (Booking $record) => $record->status === 'confirmed'),
-                    Action::make('attended')
-                        ->label('إلغاء الحجز')
-                        ->icon('heroicon-m-x-circle')
+
+                    Action::make('cancel')
+                        ->label('إلغاء')
                         ->color('danger')
                         ->requiresConfirmation()
                         ->action(fn (Booking $record) => $record->update(['status' => 'cancelled']))
-                        ->visible(fn (Booking $record) => $record->status === 'confirmed'),
-
+                        ->visible(fn (Booking $record) => in_array($record->status, ['pending', 'confirmed'])),
                     // ActionsEditAction::make(),
                 ]),
             ])

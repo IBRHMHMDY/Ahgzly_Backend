@@ -30,14 +30,18 @@ class BookingForm
                             ->preload()
                             ->required()
                             ->createOptionForm([
-                                TextInput::make('name')
-                                    ->required()
-                                    ->label('الاسم'),
-                                TextInput::make('phone')
-                                    ->required()
-                                    ->tel()
-                                    ->label('رقم الهاتف'),
-                            ]),
+                                TextInput::make('name')->required(),
+                                TextInput::make('phone')->required(),
+                                TextInput::make('email')->email()->nullable(),
+                            ])
+                            ->createOptionUsing(function (array $data) {
+                                $tenant = Filament::getTenant();
+
+                                return \App\Models\Customer::create([
+                                    ...$data,
+                                    'restaurant_id' => $tenant->id,
+                                ])->id;
+                            }),
 
                         DatePicker::make('booking_date')
                             ->label('تاريخ الحجز')
@@ -80,12 +84,12 @@ class BookingForm
                             ->label('حالة الحجز')
                             ->options([
                                 'pending' => 'قيد الانتظار',
-                                'confirmed' => 'مؤكد',
+                                'confirmed' => 'تم التأكيد',
+                                'attended' => 'حضر العميل',
                                 'cancelled' => 'ملغي',
-                                'completed' => 'مكتمل',
                             ])
-                            ->default('pending')
-                            ->required(),
+                            ->required()
+                            ->default('pending'),
                         Textarea::make('notes')
                             ->label('ملاحظات')
                             ->columnSpanFull(),

@@ -13,25 +13,20 @@ class CreateUser extends CreateRecord
     protected function afterCreate(): void
     {
         $user = $this->record;
+        $tenantId = Filament::getTenant()->id;
 
+        // اربط الموظف بالمطعم الحالي مرة واحدة فقط (آمن ضد التكرار)
         $user->restaurants()->syncWithoutDetaching([
-            Filament::getTenant()->id => [
+            $tenantId => [
                 'is_active' => true,
                 'is_default' => false,
             ],
         ]);
 
-        $user = $this->record; // الموظف الجديد
-        $tenant = \Filament\Facades\Filament::getTenant(); // المطعم الحالي
-
-        // ربطه في جدول الـ Pivot
-        $user->restaurants()->attach($tenant->id);
-
     }
 
     protected function getRedirectUrl(): string
     {
-        // التوجيه لصفحة القائمة (الجدول) بدلاً من صفحة التعديل
         return $this->getResource()::getUrl('index');
     }
 }

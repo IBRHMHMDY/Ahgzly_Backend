@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasDefaultTenant;
+use Filament\Models\Contracts\HasName;
 use Filament\Models\Contracts\HasTenants;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,10 +15,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\HasDatabaseNotifications;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements FilamentUser, HasDefaultTenant, HasTenants
+class User extends Authenticatable implements FilamentUser, HasDefaultTenant, HasName, HasTenants
 {
     use HasApiTokens, HasDatabaseNotifications, HasFactory, HasRoles, Notifiable;
 
@@ -32,14 +34,6 @@ class User extends Authenticatable implements FilamentUser, HasDefaultTenant, Ha
         'password',
         'remember_token',
     ];
-
-    const STATUS_PENDING = 'pending';   // قيد الانتظار
-
-    const STATUS_CONFIRMED = 'confirmed'; // تم التأكيد
-
-    const STATUS_ATTENDED = 'attended';   // حضر العميل
-
-    const STATUS_CANCELLED = 'cancelled'; // ملغي
 
     protected $casts = [
         'password' => 'hashed',
@@ -60,14 +54,22 @@ class User extends Authenticatable implements FilamentUser, HasDefaultTenant, Ha
             ->withTimestamps();
     }
 
-    // --- منطق Filament والوصول ---
     public function getFilamentName(): string
     {
-        // هنا نعرض الاسم وبجانبه الدور (مثلاً: أدمن)
-        // افترضنا أن لديك عمود اسمه role أو يمكنك جلبه من جدول الصلاحيات
-        $role = $this->role ?? 'مستخدم';
 
-        return "{$this->name} | {$role}";
+        $user = Auth::user();
+
+        $roles = [
+            'Owner' => 'مالك',
+            'Manager' => 'مدير',
+            'Staff' => 'موظف',
+            'Customer' => 'عميل',
+        ];
+
+        $role = $user->getRoleNames()->first();
+
+        // 3. الإرجاع: الاسم وبجانبه الرتبة
+        return "{$user} - ({$roles[$role]} ?? {$role})";
     }
 
     public function canAccessPanel(Panel $panel): bool

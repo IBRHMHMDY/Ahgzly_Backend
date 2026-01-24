@@ -2,10 +2,8 @@
 
 namespace App\Filament\Resources\Customers\RelationManagers;
 
-// use Filament\Forms; // ❌
-// use Filament\Forms\Form; // ❌
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager; // ✅
-use Filament\Schemas\Components\TextInput; // ✅
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -49,7 +47,7 @@ class BookingsRelationManager extends RelationManager
                         'pending' => 'warning',
                         'confirmed' => 'success',
                         'cancelled' => 'danger',
-                        'completed' => 'info',
+                        'attended' => 'info',
                     }),
             ]);
     }

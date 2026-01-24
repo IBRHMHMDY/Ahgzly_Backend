@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Restaurants\Schemas;
 
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -19,6 +20,20 @@ class RestaurantForm
             ->components([
                 Section::make('تفاصيل المطعم')
                     ->components([
+                        FileUpload::make('logo')
+                            ->label('شعار المطعم')
+                            ->image()
+                            ->imageEditor() // اختياري
+                            ->directory('restaurants/logos')
+                            ->disk('public')
+                            ->visibility('public')
+                            ->columnSpanFull()
+                            ->imageEditor()
+                            ->imageEditorAspectRatioOptions([
+                                '1:1',
+                            ])
+                            ->imageEditorViewportWidth(256)
+                            ->imageEditorViewportHeight(256),
                         TextInput::make('name')
                             ->label('اسم المطعم')
                             ->required()

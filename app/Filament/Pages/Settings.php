@@ -20,7 +20,7 @@ class Settings extends Page implements HasForms
 
     protected string $view = 'filament.pages.settings';
 
-    protected static bool $isTenantAware = true;
+    protected static bool $isTenantAware = false;
 
     protected static ?string $title = 'إعدادات النظام';
 
@@ -31,14 +31,14 @@ class Settings extends Page implements HasForms
 
     public ?array $data = [];
 
-    public function mount(): void
+    public function mount(GeneralSettings $settings): void
     {
         // هنا يتم جلب البيانات المحفوظة مسبقاً لعرضها في الفورم
         // سأقوم بوضع بيانات وهمية الآن، وعليك استبدالها بجلب البيانات من الداتابيس
         $this->form->fill([
-            'site_name' => 'Ahgzly Online',
-            'maintenance_mode' => false,
-            'support_email' => 'support@ahgzly.com',
+            'site_name' => $settings->site_name,
+            'support_email' => $settings->support_email,
+            'maintenance_mode' => $settings->maintenance_mode,
         ]);
     }
 
@@ -68,27 +68,16 @@ class Settings extends Page implements HasForms
 
     public function save(GeneralSettings $settings): void
     {
-        try {
-            $data = $this->form->getState();
+        $data = $this->form->getState();
 
-            // تحديث القيم في كلاس الإعدادات
-            $settings->site_name = $data['site_name'];
-            $settings->support_email = $data['support_email'];
-            $settings->maintenance_mode = $data['maintenance_mode'];
+        $settings->site_name = $data['site_name'];
+        $settings->support_email = $data['support_email'];
+        $settings->maintenance_mode = $data['maintenance_mode'];
+        $settings->save();
 
-            // حفظ التغييرات في قاعدة البيانات
-            $settings->save();
-
-            Notification::make()
-                ->title('تم حفظ الإعدادات بنجاح')
-                ->success()
-                ->send();
-        } catch (\Exception $e) {
-            Notification::make()
-                ->title('حدث خطأ أثناء الحفظ')
-                ->body($e->getMessage())
-                ->danger()
-                ->send();
-        }
+        Notification::make()
+            ->title('تم حفظ الإعدادات')
+            ->success()
+            ->send();
     }
 }
