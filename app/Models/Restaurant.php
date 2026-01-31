@@ -20,7 +20,6 @@ class Restaurant extends Model implements HasAvatar
         'max_bookings_per_slot' => 'integer',
     ];
 
-
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
@@ -33,12 +32,10 @@ class Restaurant extends Model implements HasAvatar
             ->withTimestamps();
     }
 
-
     public function favoritedByUsers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'restaurant_favorites')->withTimestamps();
     }
-
 
     public function customers()
     {
@@ -57,5 +54,15 @@ class Restaurant extends Model implements HasAvatar
         }
 
         return asset('storage/'.$this->logo);
+    }
+
+    public function workingHours()
+    {
+        return $this->hasMany(\App\Models\RestaurantWorkingHour::class);
+    }
+
+    public function closures()
+    {
+        return $this->hasMany(\App\Models\RestaurantClosure::class);
     }
 }

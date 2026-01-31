@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Restaurant;
+use App\Models\RestaurantWorkingHour;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -79,6 +80,19 @@ class DatabaseSeeder extends Seeder
                 'is_default' => false,
             ],
         ]);
+
+        Restaurant::query()->each(function (Restaurant $restaurant) {
+            for ($day = 0; $day <= 6; $day++) {
+                RestaurantWorkingHour::updateOrCreate(
+                    ['restaurant_id' => $restaurant->id, 'day_of_week' => $day],
+                    [
+                        'is_closed' => false,
+                        'opens_at' => '12:00:00',
+                        'closes_at' => '23:00:00',
+                    ]
+                );
+            }
+        });
 
         $this->command->info('✅ Setup Done!');
         $this->command->info('Users: \\n --owner@admin.com : Owner \\n --manager@admin.com : Manager \\n --staff@admin.com : Staff');

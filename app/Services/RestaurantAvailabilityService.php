@@ -10,12 +10,48 @@ class RestaurantAvailabilityService
 {
     public function getAvailableSlots(Restaurant $restaurant, string $date): array
     {
-        $slotDuration = $restaurant->slot_duration_minutes ?? 90;
+        // 1) Closure check
+        $isClosedDate = $restaurant->closures()
+            ->whereDate('date', $date)
+            ->exists();
 
-        $openingTime = Carbon::parse("$date 12:00");
-        $closingTime = Carbon::parse("$date 23:00");
+        if ($isClosedDate) {
+            return [];
+        }
+
+        // 2) Working hours by day of week
+        $dayOfWeek = Carbon::parse($date)->dayOfWeek; // 0=Sun..6=Sat
+
+        $working = $restaurant->workingHours()
+            ->where('day_of_week', $dayOfWeek)
+            ->first();
+
+        if (! $working || $working->is_closed) {
+            return [];
+        }
+
+        if (! $working->opens_at || ! $working->closes_at) {
+            return [];
+        }
+
+        $slotDuration = (int) ($restaurant->slot_duration_minutes ?? 90);
+
+        $openingTime = Carbon::parse("$date {$working->opens_at}");
+        $closingTime = Carbon::parse("$date {$working->closes_at}");
+
+        if ($openingTime->gte($closingTime)) {
+            return [];
+        }
 
         $slots = [];
+
+        // fetch bookings once (perf) ثم فلترة overlap in-memory (اختياري)
+        // أو نترك query لكل slot (يكفي لـ MVP). الأفضل fetch once:
+        $bookings = Booking::query()
+            ->where('restaurant_id', $restaurant->id)
+            ->where('booking_date', $date)
+            ->where('status', 'confirmed')
+            ->get(['start_at', 'end_at', 'guests_count']);
 
         while ($openingTime->lt($closingTime)) {
             $startAt = $openingTime->copy();
@@ -25,17 +61,14 @@ class RestaurantAvailabilityService
                 break;
             }
 
-            $overlappingBookings = Booking::where('restaurant_id', $restaurant->id)
-                ->where('booking_date', $date)
-                ->where('status', 'confirmed')
-                ->where(function ($q) use ($startAt, $endAt) {
-                    $q->where('start_at', '<', $endAt)
-                        ->where('end_at', '>', $startAt);
-                })
-                ->get();
+            // overlap detection in-memory (fast for typical daily booking count)
+            $overlaps = $bookings->filter(function ($b) use ($startAt, $endAt) {
+                return Carbon::parse($b->start_at)->lt($endAt)
+                    && Carbon::parse($b->end_at)->gt($startAt);
+            });
 
-            $totalBookings = $overlappingBookings->count();
-            $totalGuests = $overlappingBookings->sum('guests_count');
+            $totalBookings = $overlaps->count();
+            $totalGuests = $overlaps->sum('guests_count');
 
             $isAvailable = true;
 
