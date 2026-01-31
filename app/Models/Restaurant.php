@@ -10,8 +10,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Restaurant extends Model implements HasAvatar
 {
     protected $fillable = [
-        'owner_id', 'name', 'slug', 'phone', 'address', 'is_active', 'is_default', 'logo',
+        'owner_id', 'name', 'slug', 'phone', 'address', 'is_active', 'logo', 'slot_duration_minutes', 'max_guests_per_slot', 'max_bookings_per_slot',
     ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'slot_duration_minutes' => 'integer',
+        'max_guests_per_slot' => 'integer',
+        'max_bookings_per_slot' => 'integer',
+    ];
+
 
     public function owner(): BelongsTo
     {
@@ -24,6 +32,13 @@ class Restaurant extends Model implements HasAvatar
             ->withPivot(['is_default', 'is_active'])
             ->withTimestamps();
     }
+
+
+    public function favoritedByUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'restaurant_favorites')->withTimestamps();
+    }
+
 
     public function customers()
     {

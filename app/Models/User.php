@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Restaurant;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasDefaultTenant;
 use Filament\Models\Contracts\HasName;
@@ -126,5 +127,11 @@ class User extends Authenticatable implements FilamentUser, HasDefaultTenant, Ha
         }
 
         return $default;
+    }
+
+
+    public function favoriteRestaurants(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Restaurant::class, 'restaurant_favorites')->withTimestamps();
     }
 }

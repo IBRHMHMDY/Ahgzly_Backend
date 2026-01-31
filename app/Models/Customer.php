@@ -10,6 +10,7 @@ class Customer extends Model
 {
     protected $fillable = [
         'restaurant_id',
+        'user_id',
         'name',
         'email',
         'phone',

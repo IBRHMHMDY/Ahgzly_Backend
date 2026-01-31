@@ -59,6 +59,28 @@ class RestaurantForm
                             ->required()
                             ->maxLength(255),
 
+                        TextInput::make('slot_duration_minutes')
+                            ->label('مدة الحجز (بالدقائق)')
+                            ->numeric()
+                            ->minValue(15)
+                            ->maxValue(360)
+                            ->default(90)
+                            ->helperText('المدة الافتراضية للحجز عند إنشاء end_at.'),
+
+                        TextInput::make('max_guests_per_slot')
+                            ->label('الحد الأقصى للضيوف لكل توقيت')
+                            ->numeric()
+                            ->minValue(1)
+                            ->nullable()
+                            ->helperText('اتركه فارغاً لتعطيل حد الضيوف.'),
+
+                        TextInput::make('max_bookings_per_slot')
+                            ->label('الحد الأقصى لعدد الحجوزات لكل توقيت')
+                            ->numeric()
+                            ->minValue(1)
+                            ->nullable()
+                            ->helperText('اتركه فارغاً لتعطيل حد عدد الحجوزات.'),
+
                         Toggle::make('is_active')
                             ->label('مفعل؟')
                             ->default(true)

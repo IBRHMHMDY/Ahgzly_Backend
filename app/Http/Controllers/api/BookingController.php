@@ -3,84 +3,50 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\StoreBookingRequest;
 use App\Http\Resources\BookingResource;
 use App\Models\Booking;
-use App\Models\Customer;
-use App\Models\Restaurant;
+use App\Support\ApiResponse;
+use App\Services\BookingService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class BookingController extends Controller
 {
-    // عرض حجوزات المستخدم الحالي فقط
-    public function index()
+    public function __construct(private readonly BookingService $bookingService)
     {
-        $user = Auth::user();
-
-        // نبحث عن الحجوزات المرتبطة برقم هاتف أو إيميل المستخدم في جداول العملاء
-        // بما أن Booking مرتبط بـ Customer وليس User مباشرة
-        $bookings = Booking::whereHas('customer', function ($query) use ($user) {
-            $query->where('phone', $user->phone)
-                ->orWhere('email', $user->email);
-        })->latest()->get();
-
-        return BookingResource::collection($bookings);
     }
 
-    // إنشاء حجز جديد
-    public function store(Request $request)
+    // GET /api/bookings (or legacy /api/mybookings)
+    public function index(Request $request)
     {
-        $request->validate([
-            'restaurant_id' => 'required|exists:restaurants,id',
-            'booking_date' => 'required|date|after_or_equal:today',
-            'start_at' => 'required|date_format:H:i',
-            'guests_count' => 'required|integer|min:1',
-            'notes' => 'nullable|string',
-        ]);
+        $user = $request->user();
 
-        $user = Auth::user();
-        $restaurant = Restaurant::findOrFail($request->restaurant_id);
+        // Prefer stable link by user_id (customer profile), fallback to phone/email for legacy records
+        $bookings = Booking::query()
+            ->with(['restaurant', 'customer'])
+            ->whereHas('customer', function ($query) use ($user) {
+                $query->where('user_id', $user->id)
+                    ->orWhere('phone', $user->phone)
+                    ->orWhere('email', $user->email);
+            })
+            ->latest()
+            ->paginate(20);
 
-        // --- الخطوة السحرية: إيجاد أو إنشاء بروفايل العميل داخل المطعم ---
-        // نبحث عن العميل في هذا المطعم تحديداً
-        $customer = Customer::firstOrCreate(
-            [
-                'restaurant_id' => $restaurant->id,
-                'phone' => $user->phone, // نعتمد الهاتف كمعرف أساسي
-            ],
-            [
-                'name' => $user->name,
-                'email' => $user->email,
-            ]
+        return ApiResponse::success(
+            BookingResource::collection($bookings)->response()->getData(true),
+            'Bookings fetched successfully'
         );
+    }
 
-        // التحقق من وجود نفس الحجز بالوقت والتاريخ
-        $exists = Booking::where('restaurant_id', $restaurant->id)
-            ->where('customer_id', $customer->id)
-            ->where('booking_date', $request->booking_date)
-            ->where('start_at', $request->start_at)
-            ->where('status', '!=', 'cancelled') // مسموح بالحجز إذا كان السابق ملغياً
-            ->exists();
+    // POST /api/bookings
+    public function store(StoreBookingRequest $request)
+    {
+        $booking = $this->bookingService->create($request->user(), $request->validated());
 
-        if ($exists) {
-            return response()->json([
-                'message' => 'عذراً، لديك حجز مؤكد بالفعل في هذا التوقيت.',
-            ], 422);
-        }
-        // --- إنشاء الحجز ---
-        $booking = Booking::create([
-            'customer_id' => $customer->id,
-            'restaurant_id' => $restaurant->id, // للتأكيد (رغم وجوده في العميل)
-            'booking_date' => $request->booking_date,
-            'start_at' => $request->start_at,
-            'guests_count' => $request->guests_count,
-            'status' => 'pending', // الحالة الافتراضية
-            'notes' => $request->notes,
-        ]);
-
-        return response()->json([
-            'message' => 'Booking created successfully',
-            'data' => new BookingResource($booking),
-        ], 201);
+        return ApiResponse::success(
+            new BookingResource($booking->load(['restaurant', 'customer'])),
+            'Booking created successfully',
+            201
+        );
     }
 }

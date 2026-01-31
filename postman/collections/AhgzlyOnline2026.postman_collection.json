@@ -1,0 +1,253 @@
+{
+  "info": {
+    "_postman_id": "d0eedc4a-1bdd-433d-bdce-7e4b3a646f94",
+    "name": "AhgzlyOnline2026",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Register",
+      "id": "ba3a618d-df9a-4e23-a4fc-f2ec8a230519",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "1|dkjw5MUAOcklFtikpciJDC2SBxl2h7hJ9pTWalun860203eb",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"name\": \"Customer1\",\r\n    \"email\": \"customer1@test.com\",\r\n    \"phone\": \"01098888888\",\r\n    \"password\": \"cust1@0000\",\r\n    \"password_confirmation\": \"cust1@0000\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{host}}/auth/register",
+          "host": [
+            "{{host}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Me",
+      "id": "7871979a-daf3-4610-9827-4a9894848775",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "4|Izm73HGhOOYzxvHLZMp4KsquPJg9IZBVfNLWX8pW8c590cea",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer 2|bBcIIlHs08TwKJxZ2EIXnn6BfXBDX6uvzTZ8V1s589eb0319",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{host}}/auth/me",
+          "host": [
+            "{{host}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Login",
+      "id": "1b8c0e39-5598-4c16-95bb-bbfadb07e62a",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "1|dkjw5MUAOcklFtikpciJDC2SBxl2h7hJ9pTWalun860203eb",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer 1|4pIecWiK4hz19eC4zurcNCiyouq11VDenHJjolju8aa706ae",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\" : \"customer1@test.com\",\r\n    \"password\": \"cust1@0000\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{host}}/auth/login",
+          "host": [
+            "{{host}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Restaurants",
+      "id": "e23af5d0-52d3-493b-a65c-88ac1f3ae44e",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "2|Yr9hzrs67iKM7q8KguQwRkqdSu0b9bDctUrIO3CI65a4030f",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer 2|iRgiMkudfm1l3kwLjmdWfRFKL4AUm2gV92WNc7Zx64568540",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{host}}/auth/restaurants",
+          "host": [
+            "{{host}}"
+          ],
+          "path": [
+            "auth",
+            "restaurants"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Bookings",
+      "id": "0d325059-b8fa-45a1-93e7-1733776950a2",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "2|Yr9hzrs67iKM7q8KguQwRkqdSu0b9bDctUrIO3CI65a4030f",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer 2|iRgiMkudfm1l3kwLjmdWfRFKL4AUm2gV92WNc7Zx64568540",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"restaurant_id\": 1,\r\n    \"booking_date\": \"2026-02-01\",\r\n    \"start_at\": \"19:00\",\r\n    \"guests_count\": 4,\r\n    \"notes\": \"عيد ميلاد\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{host}}/auth/bookings",
+          "host": [
+            "{{host}}"
+          ],
+          "path": [
+            "auth",
+            "bookings"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

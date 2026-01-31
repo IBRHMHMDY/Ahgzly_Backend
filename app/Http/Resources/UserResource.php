@@ -5,18 +5,16 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class RestaurantResource extends JsonResource
+class UserResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'slug' => $this->slug,
-            'address' => $this->address,
+            'email' => $this->email,
             'phone' => $this->phone,
-            'logo' => $this->logo ? asset('storage/'.$this->logo) : null,
-            'is_favorited' => (bool)($this->is_favorited ?? false),
+            'roles' => method_exists($this, 'getRoleNames') ? $this->getRoleNames() : [],
         ];
     }
 }

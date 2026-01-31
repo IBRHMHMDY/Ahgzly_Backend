@@ -5,20 +5,46 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\RestaurantResource;
 use App\Models\Restaurant;
+use App\Support\ApiResponse;
+use Illuminate\Http\Request;
 
 class RestaurantController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $restaurants = Restaurant::where('is_active', true)->get();
+        $user = $request->user();
 
-        return RestaurantResource::collection($restaurants);
+        $restaurants = Restaurant::query()
+            ->where('is_active', true)
+            ->when($user, function ($query) use ($user) {
+                $query->withExists([
+                    'favoritedByUsers as is_favorited' => fn ($q) => $q->where('user_id', $user->id),
+                ]);
+            })
+            ->get();
+
+        return ApiResponse::success(
+            RestaurantResource::collection($restaurants),
+            'Restaurants fetched successfully'
+        );
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $restaurant = Restaurant::where('is_active', true)->findOrFail($id);
+        $user = $request->user();
 
-        return new RestaurantResource($restaurant);
+        $restaurant = Restaurant::query()
+            ->where('is_active', true)
+            ->when($user, function ($query) use ($user) {
+                $query->withExists([
+                    'favoritedByUsers as is_favorited' => fn ($q) => $q->where('user_id', $user->id),
+                ]);
+            })
+            ->findOrFail($id);
+
+        return ApiResponse::success(
+            new RestaurantResource($restaurant),
+            'Restaurant fetched successfully'
+        );
     }
 }

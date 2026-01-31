@@ -12,6 +12,7 @@ class Booking extends Model
         'restaurant_id',
         'booking_date',
         'start_at',
+        'end_at',
         'guests_count',
         'status',
         'notes',

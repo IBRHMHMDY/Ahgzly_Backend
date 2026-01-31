@@ -7,21 +7,19 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class BookingResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
-            'restaurant_name' => $this->customer->restaurant->name ?? 'N/A', // علاقة متداخلة
-            'date' => $this->booking_date,
-            'time' => $this->start_at,
-            'guests' => $this->guests_count,
+            'restaurant_id' => $this->restaurant_id,
+            'restaurant_name' => $this->restaurant?->name ?? 'N/A',
+            'date' => optional($this->booking_date)->format('Y-m-d') ?? $this->booking_date,
+            'start_at' => $this->start_at,
+            'end_at' => $this->end_at,
+            'guests_count' => $this->guests_count,
             'status' => $this->status,
             'notes' => $this->notes,
+            'created_at' => optional($this->created_at)->toISOString(),
         ];
     }
 }
