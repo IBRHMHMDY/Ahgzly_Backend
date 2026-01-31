@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Customers\RelationManagers;
 
 use Filament\Forms\Components\TextInput;
-use Filament\Resources\RelationManagers\RelationManager; // ✅
+use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Restaurant;
+use App\Observers\RestaurantObserver;
 use App\Policies\RestaurantPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -23,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(Restaurant::class, RestaurantPolicy::class);
+        Restaurant::observe(RestaurantObserver::class);
 
     }
 }

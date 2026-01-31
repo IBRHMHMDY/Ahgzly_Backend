@@ -3,8 +3,6 @@
 namespace App\Filament\Resources\Restaurants;
 
 use App\Filament\Resources\Restaurants\Pages\CreateRestaurant;
-// نحتاجها للـ Slug
-// نحتاجها للـ Slug
 use App\Filament\Resources\Restaurants\Pages\EditRestaurant;
 use App\Filament\Resources\Restaurants\Pages\ListRestaurants;
 use App\Filament\Resources\Restaurants\Schemas\RestaurantForm;
@@ -52,7 +50,8 @@ class RestaurantResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            \App\Filament\Resources\Restaurants\RelationManagers\WorkingHoursRelationManager::class,
+            \App\Filament\Resources\Restaurants\RelationManagers\ClosuresRelationManager::class,
         ];
     }
 
