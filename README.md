@@ -1,4 +1,4 @@
-# Ahgzly MVP - Restaurants & Cafes Booking (Laravel 12 API + Filament)
+# Ahgzly MVP - Booking System (Laravel 12 API + Filament)
 
 ## Stack
 - Laravel 12 (API)
