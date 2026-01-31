@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Restaurant;
 use App\Models\RestaurantWorkingHour;
+use Illuminate\Support\Facades\Cache;
 
 class RestaurantObserver
 {
@@ -27,6 +28,16 @@ class RestaurantObserver
                 'opens_at' => '12:00:00',
                 'closes_at' => '23:00:00',
             ]);
+        }
+    }
+
+    public function updated(Restaurant $restaurant): void
+    {
+        if ($restaurant->wasChanged(['slot_duration_minutes', 'max_guests_per_slot', 'max_bookings_per_slot'])) {
+            $store = Cache::getStore();
+            if (method_exists($store, 'tags')) {
+                Cache::tags(["restaurant:{$restaurant->id}"])->flush();
+            }
         }
     }
 }

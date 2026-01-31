@@ -5,12 +5,34 @@ namespace App\Services;
 use App\Models\Booking;
 use App\Models\Restaurant;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class RestaurantAvailabilityService
 {
+    /**
+     * Cache TTL (seconds)
+     * 5 دقائق عادة ممتازة للـ MVP (تقليل الضغط + استجابة سريعة)
+     */
+    private int $ttl = 300;
+
     public function getAvailableSlots(Restaurant $restaurant, string $date): array
     {
-        // 1) Closure check
+        // Cache Key per restaurant/date + settings that affect slots
+        $key = $this->cacheKey($restaurant, $date);
+
+        // لو عندك Redis/Memcached تقدر تستخدم tags (أفضل للإبطال)
+        if ($this->supportsTags()) {
+            return Cache::tags($this->cacheTags($restaurant))
+                ->remember($key, $this->ttl, fn () => $this->compute($restaurant, $date));
+        }
+
+        // Fallback لأي driver لا يدعم tags
+        return Cache::remember($key, $this->ttl, fn () => $this->compute($restaurant, $date));
+    }
+
+    private function compute(Restaurant $restaurant, string $date): array
+    {
+        // 1) لو اليوم مغلق بقرار استثنائي (closures) => مفيش Slots
         $isClosedDate = $restaurant->closures()
             ->whereDate('date', $date)
             ->exists();
@@ -19,8 +41,8 @@ class RestaurantAvailabilityService
             return [];
         }
 
-        // 2) Working hours by day of week
-        $dayOfWeek = Carbon::parse($date)->dayOfWeek; // 0=Sun..6=Sat
+        // 2) جلب ساعات العمل حسب يوم الأسبوع
+        $dayOfWeek = Carbon::createFromFormat('Y-m-d', $date)->dayOfWeek; // 0=Sun..6=Sat
 
         $working = $restaurant->workingHours()
             ->where('day_of_week', $dayOfWeek)
@@ -39,19 +61,21 @@ class RestaurantAvailabilityService
         $openingTime = Carbon::parse("$date {$working->opens_at}");
         $closingTime = Carbon::parse("$date {$working->closes_at}");
 
+        // Guard
         if ($openingTime->gte($closingTime)) {
             return [];
         }
 
-        $slots = [];
-
-        // fetch bookings once (perf) ثم فلترة overlap in-memory (اختياري)
-        // أو نترك query لكل slot (يكفي لـ MVP). الأفضل fetch once:
+        // 3) تحميل حجوزات اليوم مرة واحدة (Performance)
+        // status confirmed فقط، ويمكن توسعته لاحقاً
         $bookings = Booking::query()
             ->where('restaurant_id', $restaurant->id)
             ->where('booking_date', $date)
             ->where('status', 'confirmed')
             ->get(['start_at', 'end_at', 'guests_count']);
+
+        // 4) توليد Slots + حساب Overlap + Capacity
+        $slots = [];
 
         while ($openingTime->lt($closingTime)) {
             $startAt = $openingTime->copy();
@@ -61,27 +85,27 @@ class RestaurantAvailabilityService
                 break;
             }
 
-            // overlap detection in-memory (fast for typical daily booking count)
+            // Overlap in-memory (مناسب جدًا غالبًا للـ MVP)
             $overlaps = $bookings->filter(function ($b) use ($startAt, $endAt) {
                 return Carbon::parse($b->start_at)->lt($endAt)
                     && Carbon::parse($b->end_at)->gt($startAt);
             });
 
             $totalBookings = $overlaps->count();
-            $totalGuests = $overlaps->sum('guests_count');
+            $totalGuests = (int) $overlaps->sum('guests_count');
 
             $isAvailable = true;
 
             if (
                 $restaurant->max_bookings_per_slot !== null &&
-                $totalBookings >= $restaurant->max_bookings_per_slot
+                $totalBookings >= (int) $restaurant->max_bookings_per_slot
             ) {
                 $isAvailable = false;
             }
 
             if (
                 $restaurant->max_guests_per_slot !== null &&
-                $totalGuests >= $restaurant->max_guests_per_slot
+                $totalGuests >= (int) $restaurant->max_guests_per_slot
             ) {
                 $isAvailable = false;
             }
@@ -96,5 +120,33 @@ class RestaurantAvailabilityService
         }
 
         return $slots;
+    }
+
+    private function cacheKey(Restaurant $restaurant, string $date): string
+    {
+        // ضمنا إعدادات المطعم المؤثرة على Slots
+        // لو تتغير: slot_duration / max_* => الكاش لازم يتغير
+        $settingsSig = implode(':', [
+            (int) ($restaurant->slot_duration_minutes ?? 90),
+            $restaurant->max_bookings_per_slot ?? 'null',
+            $restaurant->max_guests_per_slot ?? 'null',
+        ]);
+
+        return "restaurants:{$restaurant->id}:available-slots:{$date}:{$settingsSig}";
+    }
+
+    private function cacheTags(Restaurant $restaurant): array
+    {
+        // Tag عام لكل الكاش المتعلق بالمطعم
+        return ["restaurant:{$restaurant->id}"];
+    }
+
+    private function supportsTags(): bool
+    {
+        // drivers التي تدعم tags: redis, memcached عادة
+        // file/database لا يدعم
+        $store = Cache::getStore();
+
+        return method_exists($store, 'tags');
     }
 }

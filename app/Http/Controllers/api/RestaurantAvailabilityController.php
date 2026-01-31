@@ -3,26 +3,21 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\AvailableSlotsRequest;
 use App\Models\Restaurant;
 use App\Services\RestaurantAvailabilityService;
 use App\Support\ApiResponse;
-use Illuminate\Http\Request;
 
 class RestaurantAvailabilityController extends Controller
 {
     public function index(
         Restaurant $restaurant,
-        Request $request,
+        AvailableSlotsRequest $request,
         RestaurantAvailabilityService $service
     ) {
-        $request->validate([
-            'date' => ['required', 'date', 'after_or_equal:today'],
-        ]);
+        $date = $request->validated()['date'];
 
-        $slots = $service->getAvailableSlots(
-            $restaurant,
-            $request->date
-        );
+        $slots = $service->getAvailableSlots($restaurant, $date);
 
         return ApiResponse::success(
             data: $slots,
