@@ -54,7 +54,7 @@ class EditProfile extends Page implements HasForms
                         ->label('البريد الإلكتروني')
                         ->email()
                         ->required()
-                        ->unique(ignoreRecord: true, table: 'users', column: 'email', ignorable: fn () => auth()->user()),
+                        ->unique(ignoreRecord: true, table: 'users', column: 'email', ignorable: fn () => Auth::user()),
 
                     // حقول تغيير كلمة المرور
                     TextInput::make('password')

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Restaurant;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasDefaultTenant;
 use Filament\Models\Contracts\HasName;
@@ -16,7 +15,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\HasDatabaseNotifications;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -57,30 +55,34 @@ class User extends Authenticatable implements FilamentUser, HasDefaultTenant, Ha
 
     public function getFilamentName(): string
     {
-
-        $user = Auth::user();
-
-        $roles = [
+        $rolesMap = [
             'Owner' => 'مالك',
             'Manager' => 'مدير',
             'Staff' => 'موظف',
             'Customer' => 'عميل',
         ];
 
-        $role = $user->getRoleNames()->first();
+        $role = $this->getRoleNames()->first();
+        $roleLabel = $rolesMap[$role] ?? $role ?? 'بدون دور';
 
-        // 3. الإرجاع: الاسم وبجانبه الرتبة
-        return "{$user} - ({$roles[$role]} ?? {$role})";
+        return "{$this->name}\n{$roleLabel}";
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
-        // Spatie Check: هل يملك أي دور إداري؟
-        return $this->hasAnyRole(['Owner', 'Manager', 'Staff']);
+        if ($panel->getId() === 'sysadmin') {
+            return $this->hasRole('SysAdmin');
+        }
+
+        // ✅ Panel admin الأساسي: Owner/Manager/Staff (وسيسمح للـ SysAdmin أيضًا لو تحب)
+        return $this->hasAnyRole(['SysAdmin', 'Owner', 'Manager', 'Staff']);
     }
 
     public function getTenants(Panel $panel): Collection
     {
+        if ($this->hasRole('SysAdmin')) {
+            return Restaurant::query()->get();
+        }
         // نجمع المطاعم المملوكة + المطاعم التي يعمل بها
         $owned = $this->ownedRestaurants()->where('is_active', true)->get();
 
@@ -94,7 +96,9 @@ class User extends Authenticatable implements FilamentUser, HasDefaultTenant, Ha
 
     public function canAccessTenant(Model $tenant): bool
     {
-        /** @var Restaurant $tenant */
+        if ($this->hasRole('SysAdmin')) {
+            return true;
+        }
 
         // 1. هل هو المالك؟
         if ($this->ownedRestaurants()->whereKey($tenant->id)->exists()) {
@@ -128,7 +132,6 @@ class User extends Authenticatable implements FilamentUser, HasDefaultTenant, Ha
 
         return $default;
     }
-
 
     public function favoriteRestaurants(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {

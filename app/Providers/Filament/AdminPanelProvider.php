@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\Pages\EditProfile;
 use App\Filament\Pages\Settings;
 use App\Filament\Widgets\BookingsChart;
+use App\Filament\Widgets\RestaurantsOverviewWidget;
 use App\Filament\Widgets\StatsOverview;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
@@ -36,7 +37,7 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
-            ->brandLogoHeight('3.5rem')
+            ->brandLogoHeight('3rem')
             ->brandLogo(fn () => view('filament.components.header_app_info'))
             ->databaseNotifications()
             // 👇 2. تخصيص قائمة المستخدم (User Menu)
@@ -55,10 +56,11 @@ class AdminPanelProvider extends PanelProvider
             ])
             // --- إعدادات الـ Multi-Tenancy ---
             ->tenant(
-                model: \App\Models\Restaurant::class,
+                \App\Models\Restaurant::class,
                 slugAttribute: 'slug',
                 ownershipRelationship: 'restaurant',
             )
+            ->searchableTenantMenu()
 
             // ---------------------------------
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
@@ -68,6 +70,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
+                RestaurantsOverviewWidget::class,
                 StatsOverview::class,
                 BookingsChart::class,
             ])
@@ -81,9 +84,11 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                \App\Http\Middleware\RedirectSysAdminToSetup::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
+
             ]);
     }
 }

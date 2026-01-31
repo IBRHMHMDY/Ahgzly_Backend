@@ -1,7 +1,10 @@
 <?php
 
 return [
-
+    'providers' => [
+        App\Providers\Filament\AdminPanelProvider::class,
+        App\Providers\Filament\SysAdminPanelProvider::class, // ✅ لازم
+    ],
     /*
     |--------------------------------------------------------------------------
     | Broadcasting

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\Authenticate;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,7 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            'auth' => \Illuminate\Auth\Middleware\Authenticate::class,
+            'auth' => Authenticate::class, // ✅ مهم
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -73,6 +74,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 $status = $e->getStatusCode() ?: 400;
+
                 return \App\Support\ApiResponse::error($e->getMessage() ?: 'HTTP error', $status, null, 'http_error');
             }
 
