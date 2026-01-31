@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\FavoriteController;
+use App\Http\Controllers\Api\RestaurantAvailabilityController;
 use App\Http\Controllers\Api\RestaurantController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,7 +23,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth
     Route::get('profile', [AuthController::class, 'profile']);
     Route::post('logout', [AuthController::class, 'logout']);
-
+    Route::get(
+        '/restaurants/{restaurant}/available-slots',
+        [RestaurantAvailabilityController::class, 'index']
+    );
     // Bookings
     Route::get('bookings', [BookingController::class, 'index']);
     Route::get('mybookings', [BookingController::class, 'index']); // legacy
