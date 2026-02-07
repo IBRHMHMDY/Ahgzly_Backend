@@ -44,7 +44,7 @@ class BookingService
             }
 
             $startAt = Carbon::createFromFormat('H:i', $payload['start_at']);
-            \$duration = (int)($payload['duration_minutes'] ?? ($restaurant->slot_duration_minutes ?? 90));
+            $duration = (int) ($payload['duration_minutes'] ?? ($restaurant->slot_duration_minutes ?? 90));
             $endAt = (clone $startAt)->addMinutes($duration)->format('H:i');
 
             $exists = Booking::query()
@@ -61,8 +61,8 @@ class BookingService
             }
 
             // Capacity / overbooking protection (Phase 2)
-            $maxGuests = $restaurant->max_guests_per_slot ? (int)$restaurant->max_guests_per_slot : null;
-            $maxBookings = $restaurant->max_bookings_per_slot ? (int)$restaurant->max_bookings_per_slot : null;
+            $maxGuests = $restaurant->max_guests_per_slot ? (int) $restaurant->max_guests_per_slot : null;
+            $maxBookings = $restaurant->max_bookings_per_slot ? (int) $restaurant->max_bookings_per_slot : null;
 
             if ($maxGuests !== null || $maxBookings !== null) {
                 // Overlap condition: existing.start_at < new_end AND existing.end_at > new_start
@@ -78,14 +78,14 @@ class BookingService
                     ->selectRaw('COUNT(*) as cnt, COALESCE(SUM(guests_count), 0) as guests_sum')
                     ->first();
 
-                $currentCount = (int)($aggregate->cnt ?? 0);
-                $currentGuests = (int)($aggregate->guests_sum ?? 0);
+                $currentCount = (int) ($aggregate->cnt ?? 0);
+                $currentGuests = (int) ($aggregate->guests_sum ?? 0);
 
                 if ($maxBookings !== null && ($currentCount + 1) > $maxBookings) {
                     abort(422, 'عذراً، هذا التوقيت ممتلئ حالياً. جرّب توقيتاً آخر.');
                 }
 
-                if ($maxGuests !== null && ($currentGuests + (int)$payload['guests_count']) > $maxGuests) {
+                if ($maxGuests !== null && ($currentGuests + (int) $payload['guests_count']) > $maxGuests) {
                     abort(422, 'عذراً، هذا التوقيت لا يتسع لهذا العدد. قلّل عدد الأفراد أو اختر توقيتاً آخر.');
                 }
             }
